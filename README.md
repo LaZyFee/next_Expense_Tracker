@@ -1,6 +1,6 @@
 # 💰 ExpenseFlow — Full-Stack Expense Tracker
 
-> AI-Friendly Documentation | Version 1.0
+>  Documentation | Version 1.0
 
 ---
 
@@ -35,17 +35,20 @@
 
 | Layer       | Technology                              |
 | ----------- | --------------------------------------- |
-| Frontend    | Next.js 14+ (App Router)                |
-| Styling     | Tailwind CSS v3                         |
+| Frontend    | Next.js 16.2.6 (App Router)             |
+| Styling     | Tailwind CSS v4                         |
 | Icons       | react-icons                             |
 | Charts      | react-chartjs-2 + Chart.js              |
 | Table       | @tanstack/react-table v8                |
-| Toast       | SweetAlert2 (sweetalert2-react-content) |
+| Toast       | SweetAlert2                             |
 | Date Picker | react-datepicker                        |
+| Theme       | next-themes                             |
 | Validation  | Zod (shared frontend + backend)         |
 | Backend     | Express.js (Node.js)                    |
 | Database    | MongoDB + Mongoose                      |
 | Auth        | JWT (httpOnly cookies)                  |
+| Email       | Nodemailer                              |
+| Export      | ExcelJS, PDFKit                         |
 
 ---
 
@@ -58,11 +61,12 @@ Client (Next.js App Router)
   └── Server Actions     → Mutations (create/update/delete) via "use server"
 
 Backend (Express.js REST API)
-  ├── /api/auth          → login, signup, logout, me
-  ├── /api/entries       → CRUD for income/expense/savings entries
+  ├── /api/auth          → login, signup, logout, me, forgot-password, reset-password
+  ├── /api/transactions  → CRUD for income/expense/savings entries
   ├── /api/categories    → CRUD for user-customizable categories
   ├── /api/budgets       → monthly budget management
-  └── /api/reports       → aggregated stats, monthly summaries
+  ├── /api/reports       → aggregated stats, monthly summaries
+  └── /api/export        → export data to Excel/PDF
 
 Database (MongoDB)
   ├── users
@@ -79,98 +83,161 @@ Database (MongoDB)
 
 ```
 frontend/
-├── app/
-│   ├── layout.jsx                  # Root layout (ThemeProvider, fonts)
-│   ├── page.jsx                    # Landing / redirect to dashboard
-│   ├── (auth)/
-│   │   ├── login/page.jsx          # Login page (SSR + client form)
-│   │   └── signup/page.jsx         # Signup page
-│   ├── (dashboard)/
-│   │   ├── layout.jsx              # Dashboard shell (sidebar, header)
-│   │   ├── dashboard/page.jsx      # Dashboard overview (SSR)
-│   │   ├── entries/
-│   │   │   ├── page.jsx            # Entries list (SSR + TanStack table)
-│   │   │   └── add/page.jsx        # Add entry form
-│   │   ├── categories/page.jsx     # Manage custom categories
-│   │   ├── budgets/page.jsx        # Budget management
-│   │   └── reports/page.jsx        # Reports & graphs
-│   └── api/                        # Next.js route handlers (proxy or direct)
-│
-├── components/
-│   ├── ui/
-│   │   ├── ThemeSwitcher.jsx       # Dark/Light toggle
-│   │   ├── Modal.jsx               # Reusable modal wrapper
-│   │   ├── Pagination.jsx          # Table pagination controls
-│   │   └── Spinner.jsx
-│   ├── forms/
-│   │   ├── EntryForm.jsx           # Add/Edit entry (client component)
-│   │   ├── CategoryForm.jsx
-│   │   └── BudgetForm.jsx
-│   ├── tables/
-│   │   ├── EntriesTable.jsx        # TanStack table with date sort & pagination
-│   │   └── columns.js              # Column definitions
-│   ├── charts/
-│   │   ├── MonthlyBarChart.jsx     # Income vs Expense bar chart
-│   │   ├── CategoryPieChart.jsx    # Expense by category
-│   │   └── SavingsLineChart.jsx    # Savings trend over months
-│   ├── dashboard/
-│   │   ├── SummaryCards.jsx        # Income, Expense, Savings, Remaining cards
-│   │   └── RecentEntries.jsx
-│   └── layout/
-│       ├── Sidebar.jsx
-│       ├── Header.jsx
-│       └── MobileNav.jsx
-│
-├── actions/
-│   ├── entryActions.js             # Server actions for entries
-│   ├── categoryActions.js
-│   └── budgetActions.js
-│
-├── lib/
-│   ├── api.js                      # Fetch wrapper for Express API
-│   ├── auth.js                     # Token/session helpers
-│   └── utils.js                    # Currency format, date helpers
-│
-├── schemas/
-│   └── index.js                    # Shared Zod schemas (also used in backend)
-│
-└── tailwind.config.js
+├── public/
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── src/
+│   ├── actions/
+│   │   ├── budgetActions.js
+│   │   ├── categoryActions.js
+│   │   ├── dashboardActions.js
+│   │   ├── entryActions.js
+│   │   └── refreshViews.js
+│   ├── app/
+│   │   ├── (auth)/
+│   │   │   ├── forgot-password/
+│   │   │   │   └── page.jsx
+│   │   │   ├── login/
+│   │   │   │   └── page.jsx
+│   │   │   ├── reset-password/
+│   │   │   │   └── page.jsx
+│   │   │   └── signup/
+│   │   │       └── page.jsx
+│   │   ├── (dashboard)/
+│   │   │   ├── @modal/
+│   │   │   │   ├── (.)entries/
+│   │   │   │   │   └── add/
+│   │   │   │   │       ├── EntryFormModal.jsx
+│   │   │   │   │       └── page.jsx
+│   │   │   │   ├── (.)profile/
+│   │   │   │   │   └── edit/
+│   │   │   │   │       ├── page.jsx
+│   │   │   │   │       └── ProfileSettingsModal.jsx
+│   │   │   │   └── default.jsx
+│   │   │   ├── budgets/
+│   │   │   │   └── page.jsx
+│   │   │   ├── categories/
+│   │   │   │   └── page.jsx
+│   │   │   ├── dashboard/
+│   │   │   │   └── page.jsx
+│   │   │   ├── entries/
+│   │   │   │   ├── add/
+│   │   │   │   │   └── page.jsx
+│   │   │   │   └── page.jsx
+│   │   │   ├── profile/
+│   │   │   │   ├── edit/
+│   │   │   │   │   └── page.jsx
+│   │   │   │   └── page.jsx
+│   │   │   ├── reports/
+│   │   │   │   └── page.jsx
+│   │   │   ├── default.jsx
+│   │   │   └── layout.jsx
+│   │   ├── @modal/
+│   │   │   ├── (.)login/
+│   │   │   │   └── page.jsx
+│   │   │   └── default.js
+│   │   ├── default.js
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.js
+│   │   ├── loading.js
+│   │   ├── not-found.js
+│   │   └── page.js
+│   ├── components/
+│   │   ├── auth/
+│   │   │   ├── ForgotPasswordForm.js
+│   │   │   ├── LoginForm.js
+│   │   │   └── SignupForm.js
+│   │   ├── Chart/
+│   │   │   ├── CategoryPieChart.js
+│   │   │   ├── MonthlyBarChart.js
+│   │   │   └── SavingsLineChart.js
+│   │   ├── Modal/
+│   │   │   └── ViewDetailsModal.js
+│   │   ├── shared/
+│   │   │   ├── ui/
+│   │   │   │   ├── DatePickerField.js
+│   │   │   │   ├── Modal.js
+│   │   │   │   └── MonthYearPicker.js
+│   │   │   └── Pagination.js
+│   │   ├── BudgetManager.js
+│   │   ├── CategoriesManager.js
+│   │   ├── EntriesTable.js
+│   │   ├── EntryForm.js
+│   │   ├── ExportButtons.js
+│   │   ├── MobileNav.js
+│   │   ├── Navbar.js
+│   │   ├── ProfileSettingsForm.js
+│   │   ├── RecentEntries.js
+│   │   ├── ReportsClient.js
+│   │   ├── Sidebar.js
+│   │   ├── SummaryCards.js
+│   │   ├── ThemeProvider.js
+│   │   └── ThemeToggle.js
+│   ├── lib/
+│   │   ├── ServerApiClient.js
+│   │   └── utils.js
+│   └── schemas/
+│       └── index.js
+├── .env
+├── .gitignore
+├── eslint.config.mjs
+├── jsconfig.json
+├── middleware.js
+├── next.config.mjs
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+└── README.md
+
 ```
 
 ### Backend (`/backend`)
 
 ```
 backend/
-├── src/
-│   ├── server.js                   # Express app entry
-│   ├── config/
-│   │   ├── db.js                   # Mongoose connection
-│   │   └── env.js                  # dotenv + validation
-│   ├── models/
-│   │   ├── User.js
-│   │   ├── Entry.js
-│   │   ├── Category.js
-│   │   └── Budget.js
-│   ├── routes/
-│   │   ├── auth.routes.js
-│   │   ├── entry.routes.js
-│   │   ├── category.routes.js
-│   │   ├── budget.routes.js
-│   │   └── report.routes.js
-│   ├── controllers/
-│   │   ├── auth.controller.js
-│   │   ├── entry.controller.js
-│   │   ├── category.controller.js
-│   │   ├── budget.controller.js
-│   │   └── report.controller.js
-│   ├── middleware/
-│   │   ├── auth.middleware.js      # JWT verify
-│   │   ├── validate.middleware.js  # Zod validation middleware
-│   │   └── errorHandler.js
-│   └── schemas/
-│       └── index.js                # Zod schemas (same as frontend/schemas)
-│
-└── package.json
+├── config/
+│   ├── db.js
+│   └── env.js
+├── controllers/
+│   ├── authController.js
+│   ├── budgetController.js
+│   ├── categoryController.js
+│   ├── entryController.js
+│   ├── exportController.js
+│   └── reportController.js
+├── middleware/
+│   ├── auth.js
+│   ├── errorHandler.js
+│   └── validate.middleware.js
+├── models/
+│   ├── Budget.js
+│   ├── Category.js
+│   ├── Entry.js
+│   └── User.js
+├── routes/
+│   ├── auth.js
+│   ├── budget.js
+│   ├── categories.js
+│   ├── export.js
+│   ├── report.js
+│   └── transactions.js
+├── schemas/
+│   └── validation.js
+├── scripts/
+│   └── seedCategories.js
+├── services/
+│   └── emailService.js
+├── .env
+├── .gitignore
+├── package-lock.json
+├── package.json
+├── readme.md
+└── server.js
+
 ```
 
 ---
@@ -316,9 +383,50 @@ Get authenticated user profile.
 
 ---
 
-### Entry Routes `/api/entries` 🔒
+#### `POST /api/auth/forgot-password`
+Request password reset email.
 
-#### `GET /api/entries`
+**Request Body:**
+```json
+{
+  "email": "john@example.com"
+}
+```
+
+**Response `200`:**
+```json
+{
+  "success": true,
+  "message": "Password reset email sent"
+}
+```
+
+---
+
+#### `POST /api/auth/reset-password`
+Reset password with token.
+
+**Request Body:**
+```json
+{
+  "token": "<reset_token>",
+  "password": "NewSecurePass123"
+}
+```
+
+**Response `200`:**
+```json
+{
+  "success": true,
+  "message": "Password reset successful"
+}
+```
+
+---
+
+### Transaction Routes `/api/transactions` 🔒
+
+#### `GET /api/transactions`
 Get paginated entries for the authenticated user.
 
 **Query Parameters:**
@@ -360,7 +468,7 @@ Get paginated entries for the authenticated user.
 
 ---
 
-#### `POST /api/entries`
+#### `POST /api/transactions`
 Create a new entry.
 
 **Request Body:**
@@ -384,17 +492,17 @@ Create a new entry.
 
 ---
 
-#### `GET /api/entries/:id`
+#### `GET /api/transactions/:id`
 Get single entry by ID.
 
 ---
 
-#### `PUT /api/entries/:id`
+#### `PUT /api/transactions/:id`
 Update an entry. Same body as POST (all fields optional).
 
 ---
 
-#### `DELETE /api/entries/:id`
+#### `DELETE /api/transactions/:id`
 Delete an entry.
 
 **Response `200`:**
@@ -565,6 +673,26 @@ Expense totals by category for a given month.
 
 ---
 
+### Export Routes `/api/export` 🔒
+
+#### `GET /api/export/excel`
+Export transactions to Excel file.
+
+**Query:** `?month=6&year=2025&type=expense` (optional filters)
+
+**Response:** Excel file download (.xlsx)
+
+---
+
+#### `GET /api/export/pdf`
+Export transactions to PDF file.
+
+**Query:** `?month=6&year=2025&type=expense` (optional filters)
+
+**Response:** PDF file download (.pdf)
+
+---
+
 ## Frontend Pages & Components
 
 ### Pages
@@ -583,6 +711,22 @@ Expense totals by category for a given month.
 - Fields: Name, Email, Password, Confirm Password
 - Zod validation on client before submit
 - On success: redirect to `/dashboard`
+
+---
+
+#### `/forgot-password` — Forgot Password Page
+- **Type:** Server Page + Client Form Component
+- Fields: Email
+- On submit: POST `/api/auth/forgot-password` → send reset email
+- Show SweetAlert2 toast on success/error
+
+---
+
+#### `/reset-password` — Reset Password Page
+- **Type:** Server Page + Client Form Component
+- Fields: New Password, Confirm Password
+- Token from URL query parameter
+- On submit: POST `/api/auth/reset-password` → redirect to `/login`
 
 ---
 
@@ -612,11 +756,25 @@ Expense totals by category for a given month.
 
 ---
 
-#### `/entries/add` — Add Entry
-- **Type:** Server Page + Client Form
+#### `/entries/add` — Add Entry (Modal Route)
+- **Type:** Modal Route via `@modal/(.)entries/add`
 - Fields: Type (select), Amount, Category (dropdown, filtered by type), Date (date picker), Note (textarea)
 - Category dropdown shows user custom + system categories
-- On submit: Server Action → POST `/api/entries` → redirect to `/entries` with success toast
+- On submit: Server Action → POST `/api/transactions` → close modal with success toast
+
+---
+
+#### `/profile` — Profile Page
+- **Type:** Server Page + Client Form
+- Displays user profile information
+- Edit button opens modal for profile settings
+
+---
+
+#### `/profile/edit` — Edit Profile (Modal Route)
+- **Type:** Modal Route via `@modal/(.)profile/edit`
+- Fields: Name, Email (read-only), Current Password, New Password
+- On submit: PUT `/api/auth/me` → close modal with success toast
 
 ---
 
@@ -643,6 +801,7 @@ Expense totals by category for a given month.
 - **Overview tab:** Bar chart (monthly income vs expense vs saving)
 - **Category tab:** Pie/doughnut chart + table breakdown
 - **Savings tab:** Line chart showing savings growth with carry-over
+- Export buttons for Excel and PDF downloads
 
 ---
 
@@ -693,6 +852,22 @@ Fields:
 Validation: Zod schema (shared with backend)
 Submit: calls server action or direct fetch to API
 ```
+
+---
+
+#### `ExportButtons.js` (Client Component)
+
+```
+Props:
+  filters: FilterState
+
+Features:
+  - Export to Excel button → GET /api/export/excel
+  - Export to PDF button → GET /api/export/pdf
+  - Applies current filters from parent component
+```
+
+---
 
 ---
 
@@ -938,131 +1113,91 @@ HTTP Status codes:
 
 ---
 
-##  Types Reference
+## Data Structure Reference
 
-```
-// types/index.ts
-
-export interface User {
-  _id: string;
-  name: string;
-  email: string;
-  createdAt: string;
-}
-
-export interface Category {
-  _id: string;
-  name: string;
-  icon: string;
-  type: "income" | "expense" | "saving" | "all";
-  color: string;
-  isSystem: boolean;
-}
-
-export interface Entry {
-  _id: string;
-  type: "income" | "expense" | "saving";
-  amount: number;
-  category: Category;
-  date: string;
-  note?: string;
-  month: number;
-  year: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Budget {
-  _id: string;
-  category: Category;
-  amount: number;
-  spent: number;
-  remaining: number;
-  percentage: number;
-  month: number;
-  year: number;
-}
-
-export interface MonthlySummary {
-  month: number;
-  year: number;
-  totalIncome: number;
-  totalExpense: number;
-  totalSaving: number;
-  remainingAfterSaving: number;
-  remainingAfterExpense: number;
-  carriedOverSavings: number;
-  effectiveSavings: number;
-}
-
-export interface PaginationMeta {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  pagination?: PaginationMeta;
-  message?: string;
+### User Object
+```javascript
+{
+  _id: string,
+  name: string,
+  email: string,
+  createdAt: Date
 }
 ```
 
----
+### Category Object
+```javascript
+{
+  _id: string,
+  name: string,
+  icon: string,
+  type: "income" | "expense" | "saving" | "all",
+  color: string,
+  isSystem: boolean
+}
+```
 
-*Documentation generated for AI-assisted development. Every section maps 1:1 to implementation tasks.*
+### Entry Object
+```javascript
+{
+  _id: string,
+  type: "income" | "expense" | "saving",
+  amount: number,
+  category: Category,
+  date: Date,
+  note: string (optional),
+  month: number,
+  year: number,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
 
-expense-tracker/
-├── backend/
-│   ├── config/
-│   │   └── db.js
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── categoryController.js
-│   │   └── transactionController.js
-│   ├── models/
-│   │   ├── Category.js
-│   │   ├── Transaction.js
-│   │   └── User.js
-│   ├── routes/
-│   │   ├── auth.js
-│   │   ├── categories.js
-│   │   └── transactions.js
-│   ├── schemas/
-│   │   └── validation.js
-│   ├── middleware/
-│   │   └── auth.js
-│   ├── .env
-│   ├── package.json
-│   └── server.js
-└── frontend/
-    ├── app/
-    │   ├── layout.jsx
-    │   ├── page.jsx
-    │   ├── login/
-    │   │   └── page.jsx
-    │   ├── signup/
-    │   │   └── page.jsx
-    │   ├── dashboard/
-    │   │   └── page.jsx
-    │   ├── entries/
-    │   │   └── page.jsx
-    │   └── categories/
-    │       └── page.jsx
-    ├── components/
-    │   ├── ThemeProvider.jsx
-    │   ├── ThemeToggle.jsx
-    │   ├── Navbar.jsx
-    │   ├── StatCard.jsx
-    │   ├── DashboardCharts.jsx
-    │   └── TransactionTable.jsx
-    ├── lib/
-    │   └── actions.js
-    ├── tailwind.config.js
-    ├── .env.local
-    └── package.json
+### Budget Object
+```javascript
+{
+  _id: string,
+  category: Category,
+  amount: number,
+  spent: number,
+  remaining: number,
+  percentage: number,
+  month: number,
+  year: number
+}
+```
 
+### Monthly Summary Object
+```javascript
+{
+  month: number,
+  year: number,
+  totalIncome: number,
+  totalExpense: number,
+  totalSaving: number,
+  remainingAfterSaving: number,
+  remainingAfterExpense: number,
+  carriedOverSavings: number,
+  effectiveSavings: number
+}
+```
 
+### Pagination Meta Object
+```javascript
+{
+  total: number,
+  page: number,
+  limit: number,
+  totalPages: number
+}
+```
 
+### API Response Object
+```javascript
+{
+  success: boolean,
+  data: any,
+  pagination: PaginationMeta (optional),
+  message: string (optional)
+}
+```
