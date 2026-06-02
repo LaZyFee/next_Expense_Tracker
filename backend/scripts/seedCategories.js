@@ -30,16 +30,13 @@ const seedCategories = async () => {
     try {
         const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/expenseflow';
         await mongoose.connect(mongoUri);
-        console.log('Connected to MongoDB');
 
         // Delete existing system categories
         await Category.deleteMany({ isSystem: true });
-        console.log('Cleared existing system categories');
 
         // Insert default categories
         for (const category of defaultCategories) {
             await Category.create({ ...category, userId: null });
-            console.log(`✅ Created category: ${category.name}`);
         }
 
         console.log('🎉 System categories seeded successfully!');
